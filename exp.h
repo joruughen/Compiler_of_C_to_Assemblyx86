@@ -1,15 +1,17 @@
 #ifndef EXP_H
 #define EXP_H
-#include "imp_value.hh"
-#include "imp_type.hh"
+#include "imp_value.h"
+#include "imp_type.h"
 #include <string>
 #include <unordered_map>
 #include <list>
 #include "visitor.h"
 using namespace std;
-enum BinaryOp { PLUS_OP, MINUS_OP, MUL_OP, DIV_OP,LT_OP, LE_OP, EQ_OP };
+enum BinaryOp { PLUS_OP, MINUS_OP, MUL_OP, DIV_OP, LT_OP, LE_OP, EQ_OP, GE_OP, GT_OP, NE_OP, AND_OP, OR_OP };
+enum UnaryOp { INC_PRE_OP, DEC_PRE_OP, INC_POST_OP, DEC_POST_OP, NOT};
 
-class Body;
+// class Body;
+class Block;
 class ImpValueVisitor;
 class Exp {
 public:
@@ -17,9 +19,8 @@ public:
     virtual ImpValue accept(ImpValueVisitor* v) = 0;
     virtual ~Exp() = 0;
     static string binopToChar(BinaryOp op);
+    static string unopToChar(UnaryOp op);
 };
-
-
 
 class BinaryExp : public Exp {
 public:
@@ -29,6 +30,16 @@ public:
     int accept(Visitor* visitor);
     ImpValue accept(ImpValueVisitor* v);
     ~BinaryExp();
+};
+
+class UnaryExp : public Exp {
+public:
+    Exp *left;
+    UnaryOp op;
+    UnaryExp(Exp* l, UnaryOp op);
+    int accept(Visitor* visitor);
+    ImpValue accept(ImpValueVisitor* v);
+    ~UnaryExp();
 };
 
 class NumberExp : public Exp {
@@ -58,6 +69,16 @@ public:
     ~IdentifierExp();
 };
 
+class ArgList{
+public:
+    list<Exp*> aexps;
+    ArgList();
+    void add(Exp* aexp);
+    int accept(Visitor* visitor);
+    void accept(ImpValueVisitor* v);
+    ~ArgList();
+};
+
 
 class Stm {
 public:
@@ -77,22 +98,24 @@ public:
     ~AssignStatement();
 };
 
-class PrintStatement : public Stm {
+class PrintfStatement : public Stm {
 public:
-    Exp* e;
-    PrintStatement(Exp* e);
+    string stringsito;
+    ArgList* args;
+    PrintfStatement(string s);
+    PrintfStatement();
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);
-    ~PrintStatement();
+    ~PrintfStatement();
 };
 
 
 class IfStatement : public Stm {
 public:
     Exp* condition;
-    Body* then;
-    Body* els;
-    IfStatement(Exp* condition, Body* then, Body* els);
+    Block* then;
+    Block* els;
+    IfStatement(Exp* condition, Block* then, Block* els);
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);
     ~IfStatement();
@@ -100,8 +123,8 @@ public:
 class WhileStatement : public Stm {
 public:
     Exp* condition;
-    Body* b;
-    WhileStatement(Exp* condition, Body* b);
+    Block* b;
+    WhileStatement(Exp* condition, Block* b);
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);
     ~WhileStatement();
@@ -128,6 +151,9 @@ public:
     ~VarDecList();
 };
 
+
+
+
 class StatementList {
 public:
     list<Stm*> stms;
@@ -139,21 +165,101 @@ public:
 };
 
 
-class Body{
+// class Body{
+// public:
+//     VarDecList* vardecs;
+//     StatementList* slist;
+//     Body(VarDecList* vardecs, StatementList* stms);
+//     int accept(Visitor* visitor);
+//     void accept(ImpValueVisitor* v);
+//     ~Body();
+// };
+
+
+
+class Block {
 public:
-    VarDecList* vardecs;
-    StatementList* slist;
-    Body(VarDecList* vardecs, StatementList* stms);
-    int accept(Visitor* visitor);
+    VarDecList* varDecs;
+    StatementList* stmts;
+
+    Block(VarDecList* varDecs, StatementList* stmts);
+    ~Block();
+    int accept(Visitor* v);
     void accept(ImpValueVisitor* v);
-    ~Body();
 };
+
+
+class ParamDec {
+public:
+    string type;
+    string id;
+
+    ParamDec(string type, string id);
+    ~ParamDec();
+    int accept(Visitor* v);
+    void accept(ImpValueVisitor* v);
+};
+
+class ParamDecList {
+public:
+    list<ParamDec*> params;
+
+    ParamDecList();
+    ~ParamDecList();
+    void add(ParamDec* param);
+    int accept(Visitor* v);
+    void accept(ImpValueVisitor* v);
+};
+
+
+class FunDec {
+public:
+    string type;
+    string id;
+    ParamDecList* params;
+    Block* block;
+    FunDec(std::string type, std::string id, ParamDecList* params, Block* block);
+    ~FunDec();
+    int accept(Visitor* v);
+    void accept(ImpValueVisitor* v);
+};
+
+
+class FunDecList {
+public:
+    list<FunDec*> funDecs;
+
+    FunDecList();
+    ~FunDecList();
+    void add(FunDec* funDec);
+    int accept(Visitor* v);
+    void accept(ImpValueVisitor* v);
+};
+
+class FCallExp : public Exp {
+
+public:
+
+    string nombre;
+
+    list<Exp*> argumentos;
+
+    FCallExp(string nombre, list<Exp*> argumentos):nombre(nombre),argumentos(argumentos){};
+
+    ~FCallExp(){};
+
+    int accept(Visitor* visitor);
+
+};
+
 
 
 class Program {
 public:
-    Body* body;
-    Program(Body* body);
+    string stdio_h;
+    FunDecList* funcList;
+    FunDec* mainFunction;
+    Program(FunDecList* funcList, FunDec* mainFunction);
     ~Program();
     int accept(Visitor* v);
     void accept(ImpValueVisitor* v);

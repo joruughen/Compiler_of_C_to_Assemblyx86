@@ -2,7 +2,7 @@
 #define TYPE_VISITOR
 
 #include "exp.h"
-#include "imp_type.hh"
+#include "imp_type.h"
 
 class TypeVisitor {
 public:

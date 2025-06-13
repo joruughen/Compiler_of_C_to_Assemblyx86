@@ -1,4 +1,4 @@
-#include "imp_value.hh"
+#include "imp_value.h"
 
 ImpValue::ImpValue():type(NOTYPE) { }
 

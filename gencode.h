@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "exp.h"
-#include "imp_value_visitor.hh"
+#include "imp_value_visitor.h"
 #include "environment.hh"
 
 using namespace std;

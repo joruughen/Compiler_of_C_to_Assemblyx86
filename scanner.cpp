@@ -86,10 +86,24 @@ Token* Scanner::nextToken() {
         }
     }
 
-    else if (strchr("+-*/(){}=;,<>&|", c)) {
+    else if (strchr("+-*/(){}=;,<>&|!", c)) {
         switch(c) {
-            case '+': token = new Token(Token::PLUS, c); break;
-            case '-': token = new Token(Token::MINUS, c); break;
+            case '+':
+                if (current + 1 < input.length() && input[current + 1] == '+') {
+                    token = new Token(Token::PLUSPLUS, "++", 0, 2);
+                    current++;
+                } else {
+                    token = new Token(Token::PLUS, c);
+                }
+                break;
+            case '-':
+                if (current + 1 < input.length() && input[current + 1] == '+') {
+                    token = new Token(Token::MINUSMINUS, "--", 0, 2);
+                    current++;
+                } else {
+                    token = new Token(Token::MINUS, c);
+                }
+                break;
             case '*': token = new Token(Token::MUL, c); break;
             case '/': token = new Token(Token::DIV, c); break;
             case ',': token = new Token(Token::COMA, c); break;
@@ -98,6 +112,14 @@ Token* Scanner::nextToken() {
             case ')': token = new Token(Token::PD, c); break;
             case '{': token = new Token(Token::CBI, c); break;
             case '}': token = new Token(Token::CBD, c); break;
+            case '!':
+                if (current + 1 < input.length() && input[current + 1] == '=') {
+                    token = new Token(Token::NEQ, "!=", 0, 2);
+                    current++;
+                } else {
+                    token = new Token(Token::NOT, c);
+                }
+                break;
             case '=':
                 if (current + 1 < input.length() && input[current + 1] == '=') {
                     token = new Token(Token::EQ, "==", 0, 2);

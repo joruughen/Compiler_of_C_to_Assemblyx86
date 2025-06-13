@@ -17,7 +17,9 @@ std::ostream& operator << ( std::ostream& outs, const Token & tok )
         case Token::INCLUDE: outs << "TOKEN(INCLUDE)"; break;
         case Token::STDIOH: outs << "TOKEN(STDIOH)"; break;
         case Token::PLUS: outs << "TOKEN(PLUS)"; break;
+        case Token::PLUSPLUS: outs << "TOKEN(PLUSPLUS)"; break;
         case Token::MINUS: outs << "TOKEN(MINUS)"; break;
+        case Token::MINUSMINUS: outs << "TOKEN(MINUSMINUS)"; break;
         case Token::MUL: outs << "TOKEN(MUL)"; break;
         case Token::DIV: outs << "TOKEN(DIV)"; break;
         case Token::AND: outs << "TOKEN(AND)"; break;

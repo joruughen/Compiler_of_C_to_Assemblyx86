@@ -2,7 +2,7 @@
 #define IMP_VALUE_VISITOR
 
 #include "exp.h"
-#include "imp_value.hh"
+#include "imp_value.h"
 
 class ImpValueVisitor {
 public:

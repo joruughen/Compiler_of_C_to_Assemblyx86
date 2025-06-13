@@ -6,7 +6,7 @@
 class Token {
 public:
     enum Type {
-        INCLUDE, STDIOH , PLUS, MINUS, MUL, DIV, AND, OR, NUM, ERR,
+        INCLUDE, STDIOH , PLUS, PLUSPLUS, MINUS, MINUSMINUS, MUL, DIV, AND, OR, NUM, ERR,
         PD, PI, CBI, CBD, STRING, ID, PRINTF, ASSIGN,
         PC, LT, LE, GT, GE, EQ, NEQ, NOT,
         IF, ELSE, WHILE, FOR,
