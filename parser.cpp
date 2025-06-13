@@ -50,31 +50,31 @@ Parser::Parser(Scanner* sc):scanner(sc) {
 
 VarDec* Parser::parseVarDec() {
     VarDec* vd = NULL;
-    if (match(Token::VAR)) {
+
+    if (!match(Token::ID)) {
+        cout << "Error: se esperaba un identificador." << endl;
+        exit(1);
+    }
+    string type = previous->text;
+    list<string> ids;
+    if (!match(Token::ID)) {
+        cout << "Error: se esperaba un identificador." << endl;
+        exit(1);
+    }
+    ids.push_back(previous->text);
+    while (match(Token::COMA)) {
         if (!match(Token::ID)) {
-            cout << "Error: se esperaba un identificador después de 'var'." << endl;
-            exit(1);
-        }
-        string type = previous->text;
-        list<string> ids;
-        if (!match(Token::ID)) {
-            cout << "Error: se esperaba un identificador después de 'var'." << endl;
+            cout << "Error: se esperaba un identificador después de ','." << endl;
             exit(1);
         }
         ids.push_back(previous->text);
-        while (match(Token::COMA)) {
-            if (!match(Token::ID)) {
-                cout << "Error: se esperaba un identificador después de ','." << endl;
-                exit(1);
-            }
-            ids.push_back(previous->text);
-        }
-        if (!match(Token::PC)) {
-            cout << "Error: se esperaba un ';' al final de la declaración." << endl;
-            exit(1);
-        }
-        vd = new VarDec(type, ids);
     }
+    if (!match(Token::PC)) {
+        cout << "Error: se esperaba un ';' al final de la declaración." << endl;
+        exit(1);
+    }
+    vd = new VarDec(type, ids);
+
     return vd;
 }
 
@@ -99,17 +99,99 @@ StatementList* Parser::parseStatementList() {
 }
 
 
-Body* Parser::parseBody() {
+Block* Parser::parseBlock() {
     VarDecList* vdl = parseVarDecList();
     StatementList* sl = parseStatementList();
-    return new Body(vdl, sl);
+    return new Block(vdl, sl);
+}
+
+
+FunDec* Parser::parseFunDec() {
+    if (!match(Token::ID)) {
+        cout << "Error: se esperaba un tipo de retorno para la función." << endl;
+        exit(1);
+    }
+    string type = previous->text;
+    if (!match(Token::ID)) {
+        cout << "Error: se esperaba un identificador para la función." << endl;
+        exit(1);
+    }
+    string id = previous->text;
+    ParamDecList* params = new ParamDecList();
+    if (match(Token::PI)) {
+        if (match(Token::ID)) {
+            params->add(new ParamDec(type, previous->text));
+            while (match(Token::COMA)) {
+                if (!match(Token::ID)) {
+                    cout << "Error: se esperaba un identificador para el parámetro." << endl;
+                    exit(1);
+                }
+                params->add(new ParamDec(type, previous->text));
+            }
+        }
+        if (!match(Token::PD)) {
+            cout << "Error: se esperaba un ')' al final de los parámetros." << endl;
+            exit(1);
+        }
+    }
+    Block* block = parseBlock();
+    return new FunDec(type, id, params, block);
+}
+
+
+
+FunDecList* Parser::parseFunDecList() {
+    FunDecList* fundecs = new FunDecList();
+    FunDec* aux;
+    aux = parseFunDec();
+    while (aux != NULL) {
+        fundecs->add(aux);
+        aux = parseFunDec();
+    }
+    return fundecs;
 }
 
 
 
 Program* Parser::parseProgram() {
-    Body* v = parseBody();
-    return new Program(v);
+    if (!match(Token::INCLUDE)) {
+        cout << "Error: se esperaba un #include." << endl;
+        exit(1);
+    }
+    if (!match(Token::LT)) {
+        cout << "Error: se esperaba un <." << endl;
+        exit(1);
+    }
+    if (!match(Token::STDIOH)) {
+        cout << "Error: se esperaba un <stdio.h>." << endl;
+        exit(1);
+    }
+    if (!match(Token::GT)) {
+        cout << "Error: se esperaba un >." << endl;
+        exit(1);
+    }
+    string stdio_h = "#include <stdio.h>";
+    FunDecList* funDecs = parseFunDecList();
+    FunDec* mainFun = nullptr;
+
+    // Buscar y extraer la función main
+    for (auto it = funDecs->funDecs.begin(); it != funDecs->funDecs.end(); ) {
+        if ((*it)->id == "main") {
+            if (mainFun != nullptr) {
+                cout << "Error: más de una función main encontrada." << endl;
+                exit(1);
+            }
+            mainFun = *it;
+            it = funDecs->funDecs.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    if (mainFun == nullptr) {
+        cout << "Error: no se encontró la función main." << endl;
+        exit(1);
+    }
+    return new Program(stdio_h, funDecs, mainFun);
 }
 
 list<Stm*> Parser::parseStmList() {
@@ -140,7 +222,7 @@ Stm* Parser::parseStatement() {
             s = new AssignStatement(lex, e);
         }
 
-    } else if (match(Token::PRINT)) {
+    } else if (match(Token::PRINTF)) {
         if (!match(Token::PI)) {
             cout << "Error: se esperaba un '(' después de 'print'." << endl;
             exit(1);
@@ -150,7 +232,7 @@ Stm* Parser::parseStatement() {
             cout << "Error: se esperaba un ')' después de la expresión." << endl;
             exit(1);
         }
-        s = new PrintStatement(e);
+        s = new PrintfStatement(e);
     }
     else if (match(Token::IF)) {
         e = parseCExp();

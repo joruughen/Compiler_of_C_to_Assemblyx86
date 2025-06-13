@@ -24,7 +24,9 @@ public:
     StatementList* parseStatementList();
     VarDec* parseVarDec();
     VarDecList* parseVarDecList();
-    Body* parseBody();
+    Block* parseBlock();
+    FunDec* parseFunDec();
+    FunDecList* parseFunDecList();
 };
 
 #endif // PARSER_H

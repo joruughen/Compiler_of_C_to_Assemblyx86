@@ -259,7 +259,7 @@ public:
     string stdio_h;
     FunDecList* funcList;
     FunDec* mainFunction;
-    Program(FunDecList* funcList, FunDec* mainFunction);
+    Program(string stdio_h,FunDecList* funcList, FunDec* mainFunction);
     ~Program();
     int accept(Visitor* v);
     void accept(ImpValueVisitor* v);

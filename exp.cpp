@@ -146,8 +146,8 @@ FunDecList::~FunDecList() {
 void FunDecList::add(FunDec* funDec) { funDecs.push_back(funDec); }
 
 // Program
-Program::Program(FunDecList* funcList, FunDec* mainFunction)
-    : funcList(funcList), mainFunction(mainFunction) {}
+Program::Program(string st,FunDecList* funcList, FunDec* mainFunction)
+    : stdio_h(st), funcList(funcList), mainFunction(mainFunction) {}
 Program::~Program() {
     delete funcList;
     delete mainFunction;
