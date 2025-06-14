@@ -1,4 +1,4 @@
-#include "imp_type.hh"
+#include "imp_type.h"
 
 const char* ImpType::type_names[5] = { "notype", "void", "int", "bool", "fun" };
 

@@ -25,7 +25,7 @@ int AssignStatement::accept(Visitor* visitor) {
     return 0;
 }
 
-int PrintStatement::accept(Visitor* visitor) {
+int PrintfStatement::accept(Visitor* visitor) {
     visitor->visit(this);
     return 0;
 }
@@ -52,7 +52,7 @@ int StatementList::accept(Visitor* visitor) {
     visitor->visit(this);
     return 0;
 }
-int Body::accept(Visitor* visitor) {
+int Block::accept(Visitor* visitor) {
     visitor->visit(this);
     return 0;
 }

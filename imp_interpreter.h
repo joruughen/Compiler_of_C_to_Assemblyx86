@@ -5,7 +5,7 @@
 
 #include "exp.h"
 #include "imp_value_visitor.h"
-#include "environment.hh"
+#include "environment.h"
 
 using namespace std;
 

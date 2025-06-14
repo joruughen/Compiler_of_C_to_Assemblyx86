@@ -1,4 +1,4 @@
-#include "gencode.hh"
+#include "gencode.h"
 
 ImpValue BinaryExp::accept(ImpValueVisitor* v) {
     return v->visit(this);

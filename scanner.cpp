@@ -45,6 +45,15 @@ Token* Scanner::nextToken() {
         else if (word == "return") {
             token = new Token(Token::RETURN, word, 0, word.length());
         }
+        else if (word == "int") {
+            token = new Token(Token::TYPE, word, 0, word.length());
+        }
+        else if (word == "void") {
+            token = new Token(Token::TYPE, word, 0, word.length());
+        }
+        else if (word == "char") {
+            token = new Token(Token::TYPE, word, 0, word.length());
+        }
         else if (word == "stdio" && current + 1 < input.length() &&
         input[current] == '.' && input[current + 1] == 'h') {
             current += 2;

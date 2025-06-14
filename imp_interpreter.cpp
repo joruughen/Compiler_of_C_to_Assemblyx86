@@ -1,4 +1,4 @@
-#include "imp_interpreter.hh"
+#include "imp_interpreter.h"
 
 ImpValue BinaryExp::accept(ImpValueVisitor* v) {
     return v->visit(this);

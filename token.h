@@ -10,7 +10,8 @@ public:
         PD, PI, CBI, CBD, STRING, ID, PRINTF, ASSIGN,
         PC, LT, LE, GT, GE, EQ, NEQ, NOT,
         IF, ELSE, WHILE, FOR,
-        COMA, PCOMA, RETURN, END
+        COMA, PCOMA, RETURN, END,
+        INT, CHAR, VOID, TYPE
     };
 //CBI = curly brackets {
 

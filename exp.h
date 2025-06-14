@@ -102,7 +102,10 @@ class PrintfStatement : public Stm {
 public:
     string stringsito;
     ArgList* args;
+    PrintfStatement(string s, ArgList* args);
+
     PrintfStatement(string s);
+
     PrintfStatement();
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);

@@ -206,16 +206,16 @@ list<Stm*> Parser::parseStmList() {
 Stm* Parser::parseStatement() {
     Stm* s = NULL;
     Exp* e = NULL;
-    Body* tb = NULL; //true case
-    Body* fb = NULL; //false case
-
+    Block* tb = NULL; //true case
+    Block* fb = NULL; //false case
+    string lex;
     if (current == NULL) {
         cout << "Error: Token actual es NULL" << endl;
         exit(1);
     }
 
     if (match(Token::ID)) {
-        string lex = previous->text;
+        lex = previous->text;
 
         if (match(Token::ASSIGN)) {
             e = parseCExp();
@@ -227,44 +227,105 @@ Stm* Parser::parseStatement() {
             cout << "Error: se esperaba un '(' después de 'print'." << endl;
             exit(1);
         }
-        e = parseCExp();
+        if (match(Token::STRING)) {
+            lex = previous->text;
+        }
+        if (!match(Token::COMA)) {
+            if (!match(Token::PD)) {
+                cout<<"missing pd";
+                exit(1);
+            }
+            return new PrintfStatement(lex);
+        }
+        ArgList* args;
+        args = parseArgList();
         if (!match(Token::PD)) {
             cout << "Error: se esperaba un ')' después de la expresión." << endl;
             exit(1);
         }
-        s = new PrintfStatement(e);
+        s = new PrintfStatement(lex,args);
     }
     else if (match(Token::IF)) {
-        e = parseCExp();
-        if (!match(Token::THEN)) {
-            cout << "Error: se esperaba 'then' después de la expresión." << endl;
+        if (!match(Token::PI)) {
+            cout<<"missing (";
             exit(1);
         }
-        
-        tb = parseBody();
+        e = parseCExp();
+        if (!match(Token::PD)) {
+            cout<<"missing pd";
+            exit(1);
+        }
+        if (!match(Token::CBI)) {
+            cout << "Error: se esperaba '{' después de la expresión." << endl;
+            exit(1);
+        }
+        tb = parseBlock();
 
         if (match(Token::ELSE)) {
+            if (!match(Token::CBI)) {
+                cout<<"missing {";
+                exit(1);
+            }
             fb = parseBody();
+            if (!match(Token::CBD)) {
+                cout<<"missing }";
+                exit(1);
+            }
+            return new IfStatement(e, tb, fb);
         }
-        if (!match(Token::ENDIF)) {
-            cout << "Error: se esperaba 'end' al final de la declaración." << endl;
+        if (!match(Token::CBD)) {
+            cout<<"missing }";
             exit(1);
         }
         s = new IfStatement(e, tb, fb);
 
     }
     else if (match(Token::WHILE)) {
+        if (!match(Token::PI)) {
+            cout<<"missing (";
+            exit(1);
+        }
         e = parseCExp();
-        if (!match(Token::DO)) {
-            cout << "Error: se esperaba 'do' después de la expresión." << endl;
+
+        if (!match(Token::PD)) {
+            cout << "Error: se esperaba ')' después de la expresión." << endl;
+            exit(1);
+        }
+        if (!match(Token::CBI)) {
+            cout<<"missing {";
             exit(1);
         }
         tb = parseBody();
-        if (!match(Token::ENDWHILE)) {
-            cout << "Error: se esperaba 'endwhile' al final de la declaración." << endl;
+        if (!match(Token::CBD)) {
+            cout << "Error: se esperaba '}' al final de la declaración." << endl;
             exit(1);
         }
         s = new WhileStatement(e, tb);
+
+    }
+    else if (match(Token::FOR)) {
+        if (match(Token::TYPE)) {
+            string type = previous->text;
+            if (match(Token::ID)) {
+                if (match(Token::ASSIGN)) {
+                    e = parseCExp();
+                }
+                AssignStatement* as = new AssignStatement(previous->text, e);
+            }
+        }
+        else {
+            if (!match(Token::ID)) {
+                cout<<"missing id";
+                exit(1);
+            }
+            if (!match(Token::ASSIGN)) {
+                cout<<"missing assign";
+                exit(1);
+            }
+            if (!match(Token::NUM)) {
+                cout<<"missing num";
+            }
+        }
 
     }
     else {

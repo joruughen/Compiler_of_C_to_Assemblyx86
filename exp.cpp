@@ -72,7 +72,9 @@ AssignStatement::AssignStatement(std::string id, Exp* e) : id(id), rhs(e) {}
 AssignStatement::~AssignStatement() {}
 
 // PrintStatement
+PrintfStatement::PrintfStatement(string s,ArgList* args) : stringsito(s), args(args) {}
 PrintfStatement::PrintfStatement(string s) : stringsito(s) {}
+
 PrintfStatement::PrintfStatement(){}
 PrintfStatement::~PrintfStatement() {}
 

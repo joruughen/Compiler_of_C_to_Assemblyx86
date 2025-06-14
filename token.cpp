@@ -50,6 +50,10 @@ std::ostream& operator << ( std::ostream& outs, const Token & tok )
         case Token::PCOMA: outs << "TOKEN(PCOMA)"; break;
         case Token::RETURN : outs << "TOKEN(RETURN)"; break;
         case Token::END : outs << "TOKEN(END)"; break;
+        case Token::INT: outs << "TOKEN(INT)"; break;
+        case Token::CHAR: outs << "TOKEN(CHAR)"; break;
+        case Token::VOID: outs << "TOKEN(VOID)"; break;
+        case Token::TYPE: outs << "TOKEN(TYPE)"; break;
         default: outs << "TOKEN(UNKNOWN)"; break;
     }
     return outs;
