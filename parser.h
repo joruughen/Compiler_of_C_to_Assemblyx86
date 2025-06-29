@@ -22,6 +22,9 @@ public:
     Parser(Scanner* scanner);
     Program* parseProgram();
     Stm* parseStatement();
+
+    Stm *parseUpdateStmt();
+
     StatementList* parseStatementList();
     VarDec* parseVarDec();
     VarDecList* parseVarDecList();
