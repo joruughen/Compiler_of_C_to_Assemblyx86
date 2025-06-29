@@ -521,27 +521,6 @@ Exp* Parser::parseFactor() {
             }
         return e;
     }
-    else if (match(Token::NOT)) {
-            if (match(Token::PI)){
-                e = parseAExp(); //not?
-                if (!match(Token::PD)){
-                    cout << "Falta paréntesis derecho" << endl;
-                    exit(0);
-                }
-                return e;
-            }
-            else if (match(Token::ID)) {
-                string id = previous->text;
-                if (match(Token::PI)) {
-                    list<Exp*> args;
-                    while (!match(Token::PD)) { //check
-                        args.push_back(parseCExp());
-                        match(Token::COMA);
-                    }
-                    return new FCallExp(args, id); //not???
-                }
-            }
-    }
     cout << "Error: se esperaba un bonito input xd." << endl;
     exit(0);
 }
