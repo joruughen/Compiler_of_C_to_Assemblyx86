@@ -1,154 +1,85 @@
 #include <iostream>
 #include "exp.h"
 using namespace std;
-
-
-
-// Exp base class
+BinaryExp::BinaryExp(Exp* l, Exp* r, BinaryOp op):left(l),right(r),op(op) {}
+NumberExp::NumberExp(int v):value(v) {}
+BoolExp::BoolExp(bool v):value(v) {}
+IdentifierExp::IdentifierExp(const string& n):name(n) {}
+PrintStatement::PrintStatement(string s):s(s){}
+PrintStatement::PrintStatement(string s, vector<Exp*> param_list):s(s),param_list(param_list){}
+ForStatement::ForStatement(Stm* init, Exp* cond, Stm* next, Block* b):init(init),condition(cond),update(next),body(b){}
+ForStatement::ForStatement(VarDec* dcl,Stm* init, Exp* cond, Stm* next, Block* b):dcl(dcl),init(init),condition(cond),update(next),body(b){}
 Exp::~Exp() {}
+NumberExp::~NumberExp() { }
+BoolExp::~BoolExp() { }
+IdentifierExp::~IdentifierExp() { }
 
-string Exp::binopToChar(BinaryOp op) {
-    switch (op) {
-        case PLUS_OP: return "+";
-        case MINUS_OP: return "-";
-        case MUL_OP: return "*";
-        case DIV_OP: return "/";
-        case LT_OP: return "<";
-        case LE_OP: return "<=";
-        case EQ_OP: return "==";
-        case GE_OP: return ">=";
-        case GT_OP: return ">";
-        case NE_OP: return "!=";
-        case AND_OP: return "&&";
-        case OR_OP: return "||";
-        default: return "?";
-    }
+AssignStatement::AssignStatement(string id, Exp* e): id(id), rhs(e) {}
+AssignStatement::~AssignStatement() {
+    delete rhs;
 }
 
-string Exp::unopToChar(UnaryOp op) {
-    switch (op) {
-        case INC_PRE_OP: return "++";
-        case DEC_PRE_OP: return "--";
-        case INC_POST_OP: return "++";
-        case DEC_POST_OP: return "--";
-        case NOT: return "!";
-        default: return "?";
-    }
+IfStatement::IfStatement(Exp* c, Block* t, Block* e): condition(c), then(t), els(e) {}
+IfStatement::~IfStatement() {
+    delete condition;
+    delete then;
+    delete els;
 }
-
-// BinaryExp
-BinaryExp::BinaryExp(Exp* l, Exp* r, BinaryOp op) : left(l), right(r), op(op) {}
-BinaryExp::~BinaryExp() {}
+WhileStatement::WhileStatement(Exp* c, Block* t): condition(c), b(t) {}
 
 
-// UnaryExp
-UnaryExp::UnaryExp(Exp* l, UnaryOp op) : left(l), op(op) {}
-UnaryExp::~UnaryExp() {}
 
-
-// NumberExp
-NumberExp::NumberExp(int v) : value(v) {}
-NumberExp::~NumberExp() {}
-
-
-// BoolExp
-BoolExp::BoolExp(bool v) : value(v) {}
-BoolExp::~BoolExp() {}
-
-
-// IdentifierExp
-IdentifierExp::IdentifierExp(const std::string& n) : name(n) {}
-IdentifierExp::~IdentifierExp() {}
-
-
-// FCallExp
-
-
-// Stm base class
-Stm::~Stm() {}
-
-// AssignStatement
-AssignStatement::AssignStatement(std::string id, Exp* e) : id(id), rhs(e) {}
-AssignStatement::~AssignStatement() {}
-
-// PrintStatement
-PrintfStatement::PrintfStatement(string s) : stringsito(s) {}
-PrintfStatement::PrintfStatement(){}
-PrintfStatement::~PrintfStatement() {}
-
-// IfStatement
-IfStatement::IfStatement(Exp* condition, Block* then, Block* els)
-    : condition(condition), then(then), els(els) {}
-IfStatement::~IfStatement() {}
-
-// WhileStatement
-WhileStatement::WhileStatement(Exp* condition, Block* b)
-    : condition(condition), b(b) {}
-WhileStatement::~WhileStatement() {}
-
-// VarDec
-VarDec::VarDec(string type, list<string> vars) : type(type), vars(vars) {}
+VarDec::VarDec(string type, list<string> vars): type(type), vars(vars) {}
 VarDec::~VarDec() {}
 
-// VarDecList
-VarDecList::VarDecList() {}
+VarDecList::VarDecList(): vardecs() {}
+void VarDecList::add(VarDec* v) {
+    vardecs.push_back(v);
+}
 VarDecList::~VarDecList() {
-    for (auto v : vardecs) delete v;
+    for (auto v: vardecs) {
+        delete v;
+    }
 }
-void VarDecList::add(VarDec* vardec) { vardecs.push_back(vardec); }
 
-// ArgList
-ArgList::ArgList() {}
-ArgList::~ArgList() {
-    for (auto v : aexps) delete v;
+StatementList::StatementList(): stms() {}
+void StatementList::add(Stm* s) {
+    stms.push_back(s);
 }
-void ArgList::add(Exp* aexp) { aexps.push_back(aexp); }
 
-// StatementList
-StatementList::StatementList() {}
 StatementList::~StatementList() {
-    for (auto s : stms) delete s;
+    for (auto s: stms) {
+        delete s;
+    }
 }
-void StatementList::add(Stm* stm) { stms.push_back(stm); }
 
-// Block
-Block::Block(VarDecList* varDecs, StatementList* stmts)
-    : varDecs(varDecs), stmts(stmts) {}
+Block::Block(VarDecList* v, StatementList* s): vardecs(v), slist(s) {}
 Block::~Block() {
-    delete varDecs;
-    delete stmts;
+    delete vardecs;
+    delete slist;
 }
 
-// ParamDec
-ParamDec::ParamDec(string type, string id) : type(type), id(id) {}
-ParamDec::~ParamDec() {}
 
-// ParamDecList
-ParamDecList::ParamDecList() {}
-ParamDecList::~ParamDecList() {
-    for (auto p : params) delete p;
-}
-void ParamDecList::add(ParamDec* param) { params.push_back(param); }
 
-// FunDec
-FunDec::FunDec(std::string type, std::string id, ParamDecList* params, Block* block)
-    : type(type), id(id), params(params), block(block) {}
-FunDec::~FunDec() {
-    delete params;
-    delete block;
-}
 
-// FunDecList
-FunDecList::FunDecList() {}
-FunDecList::~FunDecList() {
-    for (auto f : funDecs) delete f;
-}
-void FunDecList::add(FunDec* funDec) { funDecs.push_back(funDec); }
 
-// Program
-Program::Program(string st,FunDecList* funcList, FunDec* mainFunction)
-    : stdio_h(st), funcList(funcList), mainFunction(mainFunction) {}
-Program::~Program() {
-    delete funcList;
-    delete mainFunction;
+Stm::~Stm() {}
+string Exp::binopToChar(BinaryOp op) {
+    string  c;
+    switch(op) {
+        case PLUS_OP: c = "+"; break;
+        case MINUS_OP: c = "-"; break;
+        case MUL_OP: c = "*"; break;
+        case DIV_OP: c = "/"; break;
+        case LT_OP: c = "<"; break;
+        case LE_OP: c = "<="; break;
+        case EQ_OP: c = "=="; break;
+        case GT_OP: c = ">"; break;
+        case GE_OP: c = ">="; break;
+        case NE_OP: c = "!="; break;
+        case AND_OP: c = "&&"; break;
+        case OR_OP: c = "||"; break;
+        default: c = "$";
+    }
+    return c;
 }

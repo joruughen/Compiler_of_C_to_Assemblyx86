@@ -3,10 +3,11 @@
 #include <string>
 #include "scanner.h"
 #include "parser.h"
-// #include "visitor.h"
-// #include "imp_interpreter.hh"
-// #include "gencode.hh"
-// #include "imp_type.hh"
+#include "visitor.h"
+#include "imp_interpreter.hh"
+#include "gencode.hh"
+#include "imp_type.hh"
+#include "type_visitor.hh"
 
 using namespace std;
 
@@ -37,19 +38,22 @@ int main(int argc, const char* argv[]) {
     cout << "Scanner exitoso" << endl;
     cout << endl;
     cout << "Iniciando parsing:" << endl;
-    Parser parser(&scanner);
+    Parser parser(&scanner); 
     try {
         Program* program = parser.parseProgram();
         cout << "Parsing exitoso" << endl << endl;
-        // cout << "Iniciando Visitor:" << endl;
-        // PrintVisitor printVisitor;
-        // ImpCODE interpreter;
-        // cout << endl;
-        // cout << "IMPRIMIR:" << endl;
-        // printVisitor.imprimir(program);
-        // cout  << endl;
-        // cout << endl << "Run program:" << endl;
-        // interpreter.interpret(program);
+        cout << "Iniciando Visitor:" << endl;
+        PrintVisitor printVisitor;
+        ImpCODE interpreter;
+        TypeVisitor typeVisitor;
+        cout << endl;
+        cout << "IMPRIMIR:" << endl;
+        printVisitor.imprimir(program);
+        cout  << endl;
+        cout<<"Type Checker:"<<endl;
+        typeVisitor.visit(program);
+        cout << endl << "Run program:" << endl;
+        interpreter.generate(program);
         cout << "End of program execution" << endl;
         delete program;
     } catch (const exception& e) {

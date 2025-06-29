@@ -12,8 +12,9 @@ private:
     bool check(Token::Type ttype);
     bool advance();
     bool isAtEnd();
-    list<Stm*> parseStmList();
     Exp* parseCExp();
+    Exp* parseAExp();
+    Exp* parseBExp();
     Exp* parseExpression();
     Exp* parseTerm();
     Exp* parseFactor();
@@ -25,8 +26,9 @@ public:
     VarDec* parseVarDec();
     VarDecList* parseVarDecList();
     Block* parseBlock();
-    FunDec* parseFunDec();
+    list<string> parseInclude();
     FunDecList* parseFunDecList();
+    FunDec* parseFunDec();
 };
 
 #endif // PARSER_H

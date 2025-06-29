@@ -1,14 +1,21 @@
 #include "imp_type.hh"
 
-const char* ImpType::type_names[5] = { "notype", "void", "int", "bool", "fun" };
+#include "imp_value.hh"
+
+const char* ImpType::type_names[7] = { "notype", "void", "int", "bool", "fun", "unsigned_int", "long" }; //debugger
 
 bool ImpType::match(const ImpType& t) {
-  if (this->ttype != t.ttype) return false;
+  if (this->ttype == INT && t.ttype == LONG) return true;
+  if (this->ttype == LONG && t.ttype == INT) return true;
+  if (this->ttype == INT && t.ttype == UINT) return true;
+  if (this->ttype == UINT && t.ttype == INT) return true;
   if (this->ttype == ImpType::FUN) {
     if (t.types.size() != this->types.size()) return false;
     for (int i=0; i < this->types.size(); i++)
       if (t.types[i] != this->types[i]) return false;
   }
+  if (this->ttype != t.ttype) return false;
+
   return true;
 }
 
@@ -27,6 +34,8 @@ bool ImpType::set_basic_type(TType tt) {
   case ImpType::INT:
   case ImpType::BOOL:
   case ImpType::VOID:
+  case ImpType::LONG:
+  case ImpType::UINT:
     this->ttype = tt; break;
   default:
     ret = false;
@@ -42,7 +51,7 @@ bool ImpType::set_fun_type(list<string> slist, string s) {
   for (it = slist.begin(); it != slist.end(); ++it) {
     ImpType type;
     type.set_basic_type(*it);
-    if (type.ttype==ImpType::INT || type.ttype==ImpType::BOOL) 
+    if (type.ttype==ImpType::INT || type.ttype==ImpType::BOOL||type.ttype==ImpType::LONG||type.ttype==ImpType::UINT)
       types.push_back(type.ttype);
     else {     
       types.clear();
@@ -66,6 +75,8 @@ ImpType::TType ImpType::string_to_type(string s) {
   if (s.compare("int")==0) tt = ImpType::INT;
   else if (s.compare("bool")==0) tt = ImpType::BOOL;
   else if (s.compare("void")==0) tt = ImpType::VOID;
+  else if (s.compare("long int")==0) tt = ImpType::LONG;
+  else if (s.compare("unsigned int") == 0) tt = ImpType::UINT;
   else tt = ImpType::NOTYPE; 
   return tt;
 }

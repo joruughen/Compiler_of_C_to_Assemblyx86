@@ -6,13 +6,9 @@
 class Token {
 public:
     enum Type {
-        INCLUDE, STDIOH , PLUS, PLUSPLUS, MINUS, MINUSMINUS, MUL, DIV, AND, OR, NUM, ERR,
-        PD, PI, CBI, CBD, STRING, ID, PRINTF, ASSIGN,
-        PC, LT, LE, GT, GE, EQ, NEQ, NOT,
-        IF, ELSE, WHILE, FOR,
-        COMA, PCOMA, RETURN, END
+        PLUS, MINUS, MUL, DIV, AND,OR, NUM, ERR, PD, PI, ID, PRINTF, INCLUDE, ASSIGN, PC,LT, LE, EQ, GT,GE,
+        NE,IF, ELSE, CHI,CHD,STRING,WHILE,COMA, FOR, PRIMITIVE_TYPE,MODIFIER_TYPE , RETURN,NOT,END,HT,POINT
     };
-//CBI = curly brackets {
 
     Type type;
     std::string text;
