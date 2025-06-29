@@ -365,11 +365,11 @@ Stm* Parser::parseStatement() {
         id = previous->text;
         BinaryOp op;
         if (match(Token::PLUS) || match(Token::MINUS)) {
-                if (match(Token::PLUS)) {
-                    op = PLUS_OP;
+            if (previous->type == Token::PLUS && match(Token::PLUS)) {
+                op = PLUS_OP;
             }
-        if (match(Token::MINUS)) {
-                    op = MINUS_OP;
+            else if (previous->type == Token::MINUS && match(Token::MINUS)) {
+                op = MINUS_OP;
             }
         }
         else {
