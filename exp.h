@@ -9,7 +9,6 @@
 class TypeVisitor;
 using namespace std;
 enum BinaryOp { PLUS_OP, MINUS_OP, MUL_OP, DIV_OP,LT_OP, LE_OP, EQ_OP, GT_OP,GE_OP, NE_OP, AND_OP, OR_OP };
-enum UnaryOp { NOT_OP};
 class Block;
 class ImpValueVisitor;
 class Exp {
@@ -20,8 +19,6 @@ public:
     virtual ~Exp() = 0;
     static string binopToChar(BinaryOp op);
 };
-
-
 
 class BinaryExp : public Exp {
 public:
@@ -40,7 +37,6 @@ public:
 class NumberExp : public Exp {
 public:
     int value;
-    UnaryOp op;
     NumberExp(int v);
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);
@@ -51,7 +47,6 @@ public:
 class BoolExp : public Exp {
 public:
     int value;
-    UnaryOp op;
     BoolExp(bool v);
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);
@@ -62,7 +57,6 @@ public:
 class IdentifierExp : public Exp {
 public:
     std::string name;
-    UnaryOp op;
     IdentifierExp(const std::string& n);
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);
