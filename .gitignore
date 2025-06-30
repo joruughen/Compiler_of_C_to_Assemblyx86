@@ -3,3 +3,16 @@ compiler
 *.exe
 __pycache__/
 .streamlit/
+
+# Virtual Environment
+venv/
+env/
+.env
+.venv/
+ENV/
+env.bak/
+venv.bak/
+__pycache__/
+*.pyc
+*.pyo
+.streamlit/
