@@ -39,17 +39,19 @@ public:
 
 class NumberExp : public Exp {
 public:
-    int value;
-    NumberExp(int v);
+    long long value;
+    string literal_type;
+
+    NumberExp(long long v, string type = "int");
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);
-    ~NumberExp();
     ImpType accept(TypeVisitor *visitor);
+    ~NumberExp();
 };
 
 class BoolExp : public Exp {
 public:
-    int value;
+    bool value;
     BoolExp(bool v);
     int accept(Visitor* visitor);
     void accept(ImpValueVisitor* v);

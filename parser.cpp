@@ -365,10 +365,10 @@ Stm* Parser::parseStatement() {
         id = previous->text;
         BinaryOp op;
         if (match(Token::PLUS) || match(Token::MINUS)) {
-                if (match(Token::PLUS)) {
+            if (match(Token::PLUS)) {
                     op = PLUS_OP;
             }
-        if (match(Token::MINUS)) {
+            if (match(Token::MINUS)) {
                     op = MINUS_OP;
             }
         }
@@ -488,8 +488,65 @@ Exp* Parser::parseTerm() {
 
 Exp* Parser::parseFactor() {
     Exp* e;
+
+    if (match(Token::MINUS)) {
+        // Parsear el factor después del menos
+        Exp* operand = parseFactor();
+        // Crear una expresión binaria: 0 - operand
+        return new BinaryExp(new NumberExp(0, "int"), operand, MINUS_OP);
+    }
     if (match(Token::NUM)) {
-        return new NumberExp(stoi(previous->text));
+        string num_str = previous->text;
+        string original = num_str;
+
+
+        bool has_u = false;
+        bool has_l = false;
+
+
+        while (!num_str.empty()) {
+            char last = num_str.back();
+            if ((last == 'U' || last == 'u') && !has_u) {
+                has_u = true;
+                num_str.pop_back();
+            } else if ((last == 'L' || last == 'l') && !has_l) {
+                has_l = true;
+                num_str.pop_back();
+            } else {
+                break;
+            }
+        }
+
+        string type = "int";
+        if (has_u && has_l) {
+            type = "unsigned long";
+        } else if (has_u) {
+            type = "unsigned int";
+        } else if (has_l) {
+            type = "long int";
+        }
+
+
+        long long value;
+        try {
+            if (has_u) {
+                value = stoull(num_str);
+            } else {
+                value = stoll(num_str);
+            }
+        } catch (const std::exception& e) {
+            cout << "Error: número fuera de rango: " << original << endl;
+            exit(1);
+        }
+
+        return new NumberExp(value, type);
+    }
+    // AÑADIR CASOS PARA TRUE Y FALSE
+    else if (match(Token::TRUE)) {
+        return new BoolExp(true);
+    }
+    else if (match(Token::FALSE)) {
+        return new BoolExp(false);
     }
     else if (match(Token::ID)) {
         string id = previous->text;

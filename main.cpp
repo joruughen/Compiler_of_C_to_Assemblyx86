@@ -54,7 +54,7 @@ int main(int argc, const char* argv[]) {
         typeVisitor.visit(program);
         cout << endl << "Run program:" << endl;
         interpreter.generate(program);
-        cout << "End of program execution" << endl;
+        //cout << "End of program execution" << endl;
         delete program;
     } catch (const exception& e) {
         cout << "Error durante la ejecución: " << e.what() << endl;

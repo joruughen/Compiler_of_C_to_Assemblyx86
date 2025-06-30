@@ -46,25 +46,33 @@ vector<ImpType> parse_format_string(const string& format) {
 }
 
 bool is_printf_compatible(const ImpType& actual, const ImpType& expected) {
+    // Allow printing unsigned as int with %d (like C does, though value may be odd)
+    if ((expected.ttype == ImpType::INT && actual.ttype == ImpType::UINT) ||
+        (expected.ttype == ImpType::UINT && actual.ttype == ImpType::INT)) {
+        return true;
+        }
+    // Allow printing unsigned as long with %ld (C allows this, value may be odd)
+    if ((expected.ttype == ImpType::LONG && actual.ttype == ImpType::UINT) ||
+        (expected.ttype == ImpType::LONG && actual.ttype == ImpType::INT)) {
+        return true;
+        }
     // Exact match
     if (actual.ttype == expected.ttype) {
         return true;
     }
-
     // Allow bool to be printed as int (common in C)
     if (expected.ttype == ImpType::INT && actual.ttype == ImpType::BOOL) {
         return true;
     }
-
     if (actual.ttype == ImpType::FUN) {
         if (actual.types.back() == expected.ttype) {
             return true;
         }
     }
-
     // No other implicit conversions for your limited type system
     return false;
 }
+
 
 void TypeVisitor::promote_operands(ImpType& t1, ImpType& t2) {
     // Balancing
@@ -145,15 +153,27 @@ void TypeVisitor::visit(StatementList *e) {
     }
 }
 
-void TypeVisitor::visit(AssignStatement *e) { //doesnt work with for init statement
-    ImpType rhsType = e->rhs->accept(this);  // Get the right-hand side type
-    ImpType lhsType = var_env.lookup(e->id); // Get variable's declared type
+void TypeVisitor::visit(AssignStatement *e) {
+    ImpType var_type = var_env.lookup(e->id);
+    ImpType rhs_type = e->rhs->accept(this);
 
-    if (!lhsType.match(rhsType)) {
-        cout<<"Type mismatch in assignment: cannot convert "
-              <<rhsType.ttype<< " to "<<lhsType.ttype;
+    // Si alguno es función, usar su tipo de retorno
+    if (var_type.ttype == ImpType::FUN && !var_type.types.empty()) {
+        var_type.ttype = var_type.types.back();
+    }
+    if (rhs_type.ttype == ImpType::FUN && !rhs_type.types.empty()) {
+        rhs_type.ttype = rhs_type.types.back();
     }
 
+    // Permitir conversiones implícitas entre tipos numéricos compatibles
+    if ((var_type.ttype == ImpType::UINT && rhs_type.ttype == ImpType::INT) ||
+        (var_type.ttype == ImpType::LONG && (rhs_type.ttype == ImpType::INT || rhs_type.ttype == ImpType::UINT)) ||
+        (var_type.ttype == ImpType::INT && rhs_type.ttype == ImpType::LONG)) {
+        cerr << "Warning: posible conversión implícita en asignación" << endl;
+        } else if (!var_type.match(rhs_type)) {
+            cerr << "Error: tipos incompatibles en asignación" << endl;
+            exit(1);
+        }
 }
 
 void TypeVisitor::visit(PrintStatement *e) {
@@ -184,7 +204,7 @@ void TypeVisitor::visit(PrintStatement *e) {
 void TypeVisitor::visit(IfStatement *e) {
     ImpType condType = e->condition->accept(this);
     ImpType int_type;
-    int_type.set_basic_type(ImpType::INT);
+    int_type.set_basic_type(ImpType::BOOL);
     if (!condType.match(int_type)) {
         cout << "If condition must be int convertible, got " << condType << endl;
         exit(1);
@@ -199,7 +219,7 @@ void TypeVisitor::visit(IfStatement *e) {
 void TypeVisitor::visit(WhileStatement *e) {
     ImpType condType = e->condition->accept(this);
     ImpType int_type;
-    int_type.set_basic_type(ImpType::INT);
+    int_type.set_basic_type(ImpType::BOOL);
     if (!condType.match(int_type)) {
         cout << "While condition must be int convertible, got " << condType << endl;
         exit(1);
@@ -218,7 +238,7 @@ void TypeVisitor::visit(ForStatement *e) {
     if (e->condition != nullptr) {
         ImpType condType = e->condition->accept(this);
         ImpType int_type;
-        int_type.set_basic_type(ImpType::INT);
+        int_type.set_basic_type(ImpType::BOOL);
         if (!condType.match(int_type)) {
             cout << "For condition must be int convertible, got " << condType << endl;
             exit(1);
@@ -264,24 +284,59 @@ void TypeVisitor::visit(ReturnStatement *e) {
 ImpType TypeVisitor::visit(BinaryExp *e) {
     ImpType left = e->left->accept(this);
     ImpType right = e->right->accept(this);
-    if (left.match(right)) {
-        promote_operands(left, right);
+
+    // Si alguno es función, usar su tipo de retorno
+    if (left.ttype == ImpType::FUN && !left.types.empty()) {
+        left.ttype = left.types.back();
     }
-    else {
-        cout<<"type mismatch" << left.ttype << "=><=" << right.ttype << endl;
+    if (right.ttype == ImpType::FUN && !right.types.empty()) {
+        right.ttype = right.types.back();
+    }
+
+    // Operadores lógicos requieren bool
+    if (e->op == AND_OP || e->op == OR_OP) {
+        if (left.ttype != ImpType::BOOL || right.ttype != ImpType::BOOL) {
+            cerr << "Error: operadores lógicos requieren operandos booleanos" << endl;
+            exit(1);
+        }
+        ImpType result;
+        result.ttype = ImpType::BOOL;
+        return result;
+    }
+
+    // Operadores de comparación
+    if (e->op >= LT_OP && e->op <= NE_OP) {
+        if (!left.match(right)) {
+            cerr << "Error: tipos incompatibles en comparación" << endl;
+            exit(1);
+        }
+        ImpType result;
+        result.ttype = ImpType::BOOL;
+        return result;
+    }
+
+    // Operadores aritméticos
+    if (!left.match(right)) {
+        cerr << "Error: tipos incompatibles en operación aritmética" << endl;
         exit(1);
     }
+    promote_operands(left, right);
     return left;
 }
 
 ImpType TypeVisitor::visit(NumberExp *e) {
     ImpType type;
-    // if (e->literal_suffix == 'L')       // e.g., 42L
-        // type.ttype = ImpType::LONG;  not implemented xd
-    // else if (e->literal_suffix == 'U')  // e.g., 42U
-        // type.ttype = ImpType::UINT;
-    // else
-    type.ttype = ImpType::INT;      // Default
+
+    if (e->literal_type == "long int" || e->literal_type == "long") {
+        type.ttype = ImpType::LONG;
+    } else if (e->literal_type == "unsigned int") {
+        type.ttype = ImpType::UINT;
+    } else if (e->literal_type == "unsigned long") {
+        type.ttype = ImpType::LONG;  // Por ahora tratamos unsigned long como long
+    } else {
+        type.ttype = ImpType::INT;
+    }
+
     return type;
 }
 
