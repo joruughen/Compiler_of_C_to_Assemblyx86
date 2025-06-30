@@ -19,15 +19,12 @@ esto ejecutara los tests del compilador, generando los archivos .s para cada arc
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-g++ exp.cpp parser.cpp scanner.cpp token.cpp visitor.cpp main.cpp imp_type.cpp gencode.cpp imp_value.cpp imp_value_visitor.hh
+# Streamlit
+Ejecutar el siguiente comando:
+```bash
+g++ exp.cpp parser.cpp scanner.cpp token.cpp visitor.cpp main.cpp imp_type.cpp gencode.cpp imp_value.cpp imp_value_visitor.hh type_visitor.cpp type_visitor.hh -o compiler
+```
+# Para ejecutar la aplicación de Streamlit, primero asegúrate de tener instalado Streamlit. Luego, ejecuta el siguiente comando en la terminal:
+```bash
+streamlit run app.py
+```
