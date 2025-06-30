@@ -1,0 +1,5 @@
+compiler
+*.o
+*.exe
+__pycache__/
+.streamlit/

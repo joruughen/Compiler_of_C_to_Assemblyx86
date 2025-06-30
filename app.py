@@ -14,6 +14,62 @@ st.set_page_config(
     layout="wide"
 )
 
+# Auto-build del compilador si no existe
+def auto_build_compiler():
+    """Compila automáticamente el proyecto si el ejecutable no existe"""
+    if not os.path.exists('./compiler'):
+        st.info("🔧 Compiler not found. Building from source...")
+
+        # Verificar que los archivos fuente (.cpp) y headers (.hh) existen
+        cpp_files = ['exp.cpp', 'parser.cpp', 'scanner.cpp', 'token.cpp',
+                     'visitor.cpp', 'main.cpp', 'imp_type.cpp', 'gencode.cpp',
+                     'imp_value.cpp', 'type_visitor.cpp']
+
+        header_files = ['imp_value_visitor.hh', 'type_visitor.hh']
+
+        all_required_files = cpp_files + header_files
+        missing_files = [f for f in all_required_files if not os.path.exists(f)]
+
+        if missing_files:
+            st.error(f"❌ Missing source files: {', '.join(missing_files)}")
+            return False
+
+        try:
+            # Comando de compilación exacto como lo usas tú
+            compile_cmd = [
+                'g++', 'exp.cpp', 'parser.cpp', 'scanner.cpp', 'token.cpp',
+                'visitor.cpp', 'main.cpp', 'imp_type.cpp', 'gencode.cpp',
+                'imp_value.cpp', 'imp_value_visitor.hh', 'type_visitor.cpp',
+                'type_visitor.hh', '-static-libgcc', '-static-libstdc++',
+                '-o', 'compiler'
+            ]
+
+            with st.spinner("🔨 Compiling project..."):
+                result = subprocess.run(
+                    compile_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+
+            if result.returncode == 0:
+                st.success("✅ Compilation successful!")
+                # Dar permisos de ejecución
+                os.chmod('./compiler', 0o755)
+                return True
+            else:
+                st.error(f"❌ Compilation failed:\n{result.stderr}")
+                return False
+
+        except subprocess.TimeoutExpired:
+            st.error("❌ Compilation timeout (>60s)")
+            return False
+        except Exception as e:
+            st.error(f"❌ Build error: {str(e)}")
+            return False
+
+    return True
+
 # CSS mejorado con diseño más moderno
 st.markdown("""
 <style>
@@ -122,29 +178,6 @@ st.markdown("""
         filter: brightness(1.1) !important;
     }
     
-    .stats-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin: 2rem 0;
-    }
-    
-    .stat-card {
-        background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
-        border: 1px solid #60a5fa;
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        color: white;
-    }
-    
-    .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #60a5fa;
-        font-family: 'Courier New', monospace;
-    }
-    
     .stTextArea textarea {
         background-color: #0a0a0a !important;
         color: #39ff14 !important;
@@ -173,6 +206,9 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Auto-build del compilador
+compiler_ready = auto_build_compiler()
 
 def check_gcc_installation():
     """Verifica si GCC está instalado y accesible"""
@@ -245,6 +281,9 @@ def run_compiler_executable(c_code, compiler_path="./compiler"):
     """
     Ejecuta el compilador real del proyecto Compiler_of_C_to_Assemblyx86
     """
+    if not compiler_ready:
+        return None, "❌ Compiler not ready. Build failed."
+
     try:
         if not os.path.exists(compiler_path):
             return None, f"No se encontró el ejecutable del compilador en: {compiler_path}\n\nPasos:\n1. Compila: g++ *.cpp -o compiler\n2. Verifica la ruta del ejecutable"
@@ -328,29 +367,29 @@ def execute_c_code_jdoodle(c_code, client_id, client_secret):
     except Exception as e:
         return None, f"Request error: {str(e)}"
 
-# Configuración de JDoodle API (solo para C)
-with st.expander("🔑 JDoodle API Settings (for C execution)", expanded=False):
-    client_id = st.text_input("Client ID", value="2829c888bcef3aca818d0a9aa7ba5679")
-    client_secret = st.text_input("Client Secret", value="f6991d6f133bc9a962819c8877e044627a18b9e774d2103fb412d1ef913f7c87", type="password")
-    st.info("💡 Get free credentials at: [JDoodle.com](https://www.jdoodle.com)")
+# Solo mostrar la interfaz si el compilador está listo
+if compiler_ready:
+    # Configuración de JDoodle API (solo para C)
+    with st.expander("🔑 JDoodle API Settings (for C execution)", expanded=False):
+        client_id = st.text_input("Client ID", value="2829c888bcef3aca818d0a9aa7ba5679")
+        client_secret = st.text_input("Client Secret", value="f6991d6f133bc9a962819c8877e044627a18b9e774d2103fb412d1ef913f7c87", type="password")
+        st.info("💡 Get free credentials at: [JDoodle.com](https://www.jdoodle.com)")
 
-# Layout principal
-col1, col2 = st.columns([1, 1], gap="large")
+    # Layout principal
+    col1, col2 = st.columns([1, 1], gap="large")
 
-with col1:
-    st.markdown("""
-    <div class="code-container">
-        <div class="code-header">
-            🔬 C Source Code Laboratory
+    with col1:
+        st.markdown("""
+        <div class="code-container">
+            <div class="code-header">
+                🔬 C Source Code Laboratory
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    c_code = st.text_area(
-        "",
-        value="""#include <stdio.h>
-        
-int main() {
+        c_code = st.text_area(
+            "",
+            value="""int main() {
     int x;
     int y;
     int result;
@@ -360,219 +399,207 @@ int main() {
     printf("Result: %d", result);
     return 0;
 }""",
-        height=300,
-        label_visibility="collapsed",
-        key="c_code_editor"
-    )
-
-    # Botones de acción para C
-    col_compile, col_run_c = st.columns(2)
-
-    with col_compile:
-        compile_clicked = st.button("🔧 COMPILE TO ASSEMBLY", key="compile_btn", use_container_width=True)
-
-    with col_run_c:
-        run_c_clicked = st.button("▶️ RUN C CODE", key="run_c_btn", use_container_width=True)
-
-    # Procesar compilación
-    if compile_clicked and c_code.strip():
-        with st.spinner("⚡ Running real compiler pipeline..."):
-            assembly_result, error = run_compiler_executable(c_code, "./compiler")
-
-            if error:
-                st.error(f"❌ Compilation Error: {error}")
-            else:
-                st.session_state['assembly_output'] = assembly_result
-                st.success("✅ Assembly generated!")
-
-    # Procesar ejecución de código C
-    if run_c_clicked:
-        if not client_id or not client_secret:
-            st.error("❌ Please enter your JDoodle API credentials!")
-        elif not c_code.strip():
-            st.error("❌ Please write some C code first!")
-        else:
-            with st.spinner("🔥 Executing C code..."):
-                result, error = execute_c_code_jdoodle(c_code, client_id, client_secret)
-
-                if error:
-                    st.error(f"❌ C Execution Error: {error}")
-                elif result:
-                    st.session_state['c_execution_output'] = result
-                    if result.get('statusCode') == 200:
-                        st.success("✅ C code executed successfully!")
-                    else:
-                        st.warning(f"⚠️ C execution status: {result.get('statusCode', 'Unknown')}")
-
-    # Mostrar output de C
-    if 'c_execution_output' in st.session_state:
-        st.markdown("### 📊 C Code Execution Results")
-        result = st.session_state['c_execution_output']
-
-        if 'output' in result and result['output'] and result['output'].strip():
-            st.markdown("**Program Output:**")
-            st.code(result['output'], language="text")
-
-        col_stats1, col_stats2, col_stats3 = st.columns(3)
-        with col_stats1:
-            status = result.get('statusCode', 'N/A')
-            if status == 200:
-                st.success(f"✅ Status: {status}")
-            else:
-                st.error(f"❌ Status: {status}")
-        with col_stats2:
-            st.info(f"💾 Memory: {result.get('memory', 'N/A')} KB")
-        with col_stats3:
-            st.info(f"⏱️ CPU: {result.get('cpuTime', 'N/A')}s")
-
-        if 'error' in result and result['error'] and result['error'].strip():
-            st.error(f"**Errors:** {result['error']}")
-
-with col2:
-    st.markdown("""
-    <div class="code-container">
-        <div class="code-header">
-            ⚡ x86-64 Assembly Output Portal
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if 'assembly_output' in st.session_state:
-        st.text_area(
-            "Generated Assembly:",
-            value=st.session_state['assembly_output'],
             height=300,
             label_visibility="collapsed",
-            key="assembly_display"
+            key="c_code_editor"
         )
 
-        # Ejecutar assembly localmente si GCC está disponible
-        gcc_available = check_gcc_installation()
+        # Botones de acción para C
+        col_compile, col_run_c = st.columns(2)
 
-        if gcc_available:
-            execute_clicked = st.button("🚀 EXECUTE ASSEMBLY (Local GCC)", key="execute_btn", use_container_width=True)
+        with col_compile:
+            compile_clicked = st.button("🔧 COMPILE TO ASSEMBLY", key="compile_btn", use_container_width=True)
 
-            if execute_clicked:
-                with st.spinner("🔥 Executing assembly with local GCC..."):
-                    result, error = compile_and_run_asm_local(st.session_state['assembly_output'])
+        with col_run_c:
+            run_c_clicked = st.button("▶️ RUN C CODE", key="run_c_btn", use_container_width=True)
+
+        # Procesar compilación
+        if compile_clicked and c_code.strip():
+            with st.spinner("⚡ Running real compiler pipeline..."):
+                assembly_result, error = run_compiler_executable(c_code, "./compiler")
+
+                if error:
+                    st.error(f"❌ Compilation Error: {error}")
+                else:
+                    st.session_state['assembly_output'] = assembly_result
+                    st.success("✅ Assembly generated!")
+
+        # Procesar ejecución de código C
+        if run_c_clicked:
+            if not client_id or not client_secret:
+                st.error("❌ Please enter your JDoodle API credentials!")
+            elif not c_code.strip():
+                st.error("❌ Please write some C code first!")
+            else:
+                with st.spinner("🔥 Executing C code..."):
+                    result, error = execute_c_code_jdoodle(c_code, client_id, client_secret)
 
                     if error:
-                        st.error(error)
-                    else:
-                        st.session_state['assembly_execution_output'] = result
-                        if result['returncode'] == 0:
-                            st.success("✅ Assembly executed successfully!")
+                        st.error(f"❌ C Execution Error: {error}")
+                    elif result:
+                        st.session_state['c_execution_output'] = result
+                        if result.get('statusCode') == 200:
+                            st.success("✅ C code executed successfully!")
                         else:
-                            st.warning(f"⚠️ Assembly exit code: {result['returncode']}")
-        else:
-            st.warning("⚠️ GCC not available - install GCC to execute assembly locally")
+                            st.warning(f"⚠️ C execution status: {result.get('statusCode', 'Unknown')}")
 
-        st.download_button(
-            label="📁 Download Assembly File",
-            data=st.session_state['assembly_output'],
-            file_name="output.s",
-            mime="text/plain",
-            use_container_width=True
-        )
-    else:
+        # Mostrar output de C
+        if 'c_execution_output' in st.session_state:
+            st.markdown("### 📊 C Code Execution Results")
+            result = st.session_state['c_execution_output']
+
+            if 'output' in result and result['output'] and result['output'].strip():
+                st.markdown("**Program Output:**")
+                st.code(result['output'], language="text")
+
+            col_stats1, col_stats2, col_stats3 = st.columns(3)
+            with col_stats1:
+                status = result.get('statusCode', 'N/A')
+                if status == 200:
+                    st.success(f"✅ Status: {status}")
+                else:
+                    st.error(f"❌ Status: {status}")
+            with col_stats2:
+                st.info(f"💾 Memory: {result.get('memory', 'N/A')} KB")
+            with col_stats3:
+                st.info(f"⏱️ CPU: {result.get('cpuTime', 'N/A')}s")
+
+            if 'error' in result and result['error'] and result['error'].strip():
+                st.error(f"**Errors:** {result['error']}")
+
+    with col2:
         st.markdown("""
-        <div class="assembly-output">
-Real assembly output will appear here after compilation...
-
-Uses the actual Compiler_of_C_to_Assemblyx86 project! 🚀
+        <div class="code-container">
+            <div class="code-header">
+                ⚡ x86-64 Assembly Output Portal
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # Mostrar resultados de assembly
-    if 'assembly_execution_output' in st.session_state:
-        st.markdown("### 📊 Assembly Execution Results")
-        result = st.session_state['assembly_execution_output']
+        if 'assembly_output' in st.session_state:
+            st.text_area(
+                "Generated Assembly:",
+                value=st.session_state['assembly_output'],
+                height=300,
+                label_visibility="collapsed",
+                key="assembly_display"
+            )
 
-        if result['stdout'] and result['stdout'].strip():
-            st.markdown("**Program Output:**")
-            st.code(result['stdout'], language="text")
+            # Ejecutar assembly localmente si GCC está disponible
+            gcc_available = check_gcc_installation()
 
-        if result['stderr'] and result['stderr'].strip():
-            st.error(f"**Errors:** {result['stderr']}")
+            if gcc_available:
+                execute_clicked = st.button("🚀 EXECUTE ASSEMBLY (Local GCC)", key="execute_btn", use_container_width=True)
 
-        col_stats1, col_stats2 = st.columns(2)
-        with col_stats1:
-            if result['returncode'] == 0:
-                st.success(f"✅ Exit Code: {result['returncode']}")
+                if execute_clicked:
+                    with st.spinner("🔥 Executing assembly with local GCC..."):
+                        result, error = compile_and_run_asm_local(st.session_state['assembly_output'])
+
+                        if error:
+                            st.error(error)
+                        else:
+                            st.session_state['assembly_execution_output'] = result
+                            if result['returncode'] == 0:
+                                st.success("✅ Assembly executed successfully!")
+                            else:
+                                st.warning(f"⚠️ Assembly exit code: {result['returncode']}")
             else:
-                st.error(f"❌ Exit Code: {result['returncode']}")
-        with col_stats2:
-            st.info(f"🔧 Local GCC")
+                st.warning("⚠️ GCC not available - install GCC to execute assembly locally")
 
-# Estadísticas simplificadas
-st.markdown("""
-<div class="stats-container">
-    <div class="stat-card">
-        <div class="stat-number">Real</div>
-        <div>Compiler Pipeline</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">Local</div>
-        <div>GCC Execution</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">x86-64</div>
-        <div>Assembly Target</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">C99</div>
-        <div>C Standard</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+            st.download_button(
+                label="📁 Download Assembly File",
+                data=st.session_state['assembly_output'],
+                file_name="output.s",
+                mime="text/plain",
+                use_container_width=True
+            )
+        else:
+            st.markdown("""
+            <div class="assembly-output">
+Real assembly output will appear here after compilation...
 
-# Sidebar simplificado
-with st.sidebar:
-    st.markdown("### 🔧 Quick Actions")
+Uses the actual Compiler_of_C_to_Assemblyx86 project! 🚀
+            </div>
+            """, unsafe_allow_html=True)
 
-    if st.button("🔄 Clear Assembly", use_container_width=True):
-        keys_to_clear = ['assembly_output', 'assembly_execution_output']
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.rerun()
+        # Mostrar resultados de assembly
+        if 'assembly_execution_output' in st.session_state:
+            st.markdown("### 📊 Assembly Execution Results")
+            result = st.session_state['assembly_execution_output']
 
-    if st.button("🗑️ Clear C Output", use_container_width=True):
-        if 'c_execution_output' in st.session_state:
-            del st.session_state['c_execution_output']
-        st.rerun()
+            if result['stdout'] and result['stdout'].strip():
+                st.markdown("**Program Output:**")
+                st.code(result['stdout'], language="text")
 
-    if st.button("🆕 Clear All", use_container_width=True):
-        keys_to_clear = ['assembly_output', 'assembly_execution_output', 'c_execution_output']
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.rerun()
+            if result['stderr'] and result['stderr'].strip():
+                st.error(f"**Errors:** {result['stderr']}")
 
-    st.markdown("---")
-    st.markdown("**📚 Setup:**")
-    st.markdown("1. Compile: `g++ *.cpp -o compiler`")
-    st.markdown("2. Install GCC for local assembly execution")
-    st.markdown("3. Set JDoodle credentials for C execution")
+            col_stats1, col_stats2 = st.columns(2)
+            with col_stats1:
+                if result['returncode'] == 0:
+                    st.success(f"✅ Exit Code: {result['returncode']}")
+                else:
+                    st.error(f"❌ Exit Code: {result['returncode']}")
+            with col_stats2:
+                st.info(f"🔧 Local GCC")
 
-    st.markdown("**🎯 Usage:**")
-    st.markdown("• **Compile to Assembly**: Uses your real compiler")
-    st.markdown("• **Run C Code**: Uses JDoodle API")
-    st.markdown("• **Execute Assembly**: Uses local GCC")
+    # Sidebar simplificado
+    with st.sidebar:
+        st.markdown("### 🔧 Quick Actions")
 
-    gcc_status = "✅ Available" if check_gcc_installation() else "❌ Not found"
-    compiler_status = "✅ Found" if os.path.exists("./compiler") else "❌ Missing"
+        if st.button("🔄 Clear Assembly", use_container_width=True):
+            keys_to_clear = ['assembly_output', 'assembly_execution_output']
+            for key in keys_to_clear:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.rerun()
 
-    st.markdown(f"**Status:**")
-    st.markdown(f"• GCC: {gcc_status}")
-    st.markdown(f"• Compiler: {compiler_status}")
+        if st.button("🗑️ Clear C Output", use_container_width=True):
+            if 'c_execution_output' in st.session_state:
+                del st.session_state['c_execution_output']
+            st.rerun()
 
-# Footer simplificado
+        if st.button("🆕 Clear All", use_container_width=True):
+            keys_to_clear = ['assembly_output', 'assembly_execution_output', 'c_execution_output']
+            for key in keys_to_clear:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.rerun()
+
+        st.markdown("---")
+        st.markdown("**📚 Setup:**")
+        st.markdown("✅ Auto-build on first run")
+        st.markdown("✅ C execution via JDoodle")
+        st.markdown("✅ Local assembly execution")
+
+        st.markdown("**🎯 Usage:**")
+        st.markdown("• **Compile to Assembly**: Uses your real compiler")
+        st.markdown("• **Run C Code**: Uses JDoodle API")
+        st.markdown("• **Execute Assembly**: Uses local GCC")
+
+        st.markdown(f"**Status:**")
+        st.markdown(f"• Compiler: ✅ Ready" if compiler_ready else "• Compiler: ❌ Failed")
+        st.markdown(f"• GCC: ✅ Available" if check_gcc_installation() else "• GCC: ❌ Not found")
+
+else:
+    st.error("""
+    ❌ **Build Failed**
+    
+    Unable to compile the project. Please ensure:
+    1. All C++ source files are present
+    2. GCC/G++ is available 
+    3. File permissions are correct
+    
+    Check the build output above for details.
+    """)
+
+# Footer
 st.markdown("""
 ---
-**🧪 Real Compiler Pipeline + Local GCC Assembly Execution**
+**🧪 Auto-Building C to Assembly Compiler**
 
-- ✅ Your C to Assembly compiler integration  
+- ✅ Automatic compilation on first run
+- ✅ Real compiler pipeline (your project)
 - ✅ JDoodle C code execution (cloud)
-- ✅ Local GCC assembly execution (fast & secure)
+- ✅ Local GCC assembly execution
 """)
