@@ -84,7 +84,7 @@ void ImpCODE::generate(Program* p) {
 
     // Generate all functions first
     for (auto fdec : p->fundecs->fundecs) {
-        visit(fdec);
+        fdec->accept(this);
     }
 
 
