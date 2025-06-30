@@ -352,31 +352,13 @@ Stm* Parser::parseStatement() {
             exit(1);
         }
         Exp* e1 = parseAExp();
+        init = new AssignStatement(id,e1);
         match(Token::PC);
 
-        init = new AssignStatement(id,e1);
         Exp* cond = parseAExp();
         match(Token::PC);
         //parse updatestmt
-        if (!match(Token::ID)) {
-            cout<<"missing id";
-            exit(1);
-        }
-        id = previous->text;
-        BinaryOp op;
-        if (match(Token::PLUS) || match(Token::MINUS)) {
-            if (match(Token::PLUS)) {
-                    op = PLUS_OP;
-            }
-            if (match(Token::MINUS)) {
-                    op = MINUS_OP;
-            }
-        }
-        else {
-            cout<<"error for update not token expected";
-            exit(1);
-        }
-        Stm* update = new AssignStatement(id,new BinaryExp(new IdentifierExp(id),new NumberExp(1),op));
+        Stm* update = parseUpdateStmt();
         if (!match(Token::PD)) {
             cout<<"missing )";
             exit(1);
@@ -402,6 +384,32 @@ Stm* Parser::parseStatement() {
         s = new ReturnStatement(e);
     }
     return s;
+}
+
+Stm* Parser::parseUpdateStmt() {
+    if (!match(Token::ID)) {
+        cout<<"missing id";
+        exit(1);
+    }
+    string id = previous->text;
+    BinaryOp op;
+    if (match(Token::PLUS) || match(Token::MINUS) ) {
+        if (previous->type == Token::PLUS && match(Token::PLUS)) {
+            op = PLUS_OP;
+        }
+        else if (previous->type == Token::MINUS && match(Token::MINUS)) {
+            op = MINUS_OP;
+        }
+        return new AssignStatement(id,new BinaryExp(new IdentifierExp(id),new NumberExp(1),op));
+    }
+    else if (match(Token::ASSIGN)) {
+        Exp* e1 = parseAExp();
+        return new AssignStatement(id,e1);
+    }
+    else {
+        cout<<"error for update not token expected";
+        exit(1);
+    }
 }
 
 Exp* Parser::parseAExp() {
@@ -569,27 +577,6 @@ Exp* Parser::parseFactor() {
             exit(0);
             }
         return e;
-    }
-    else if (match(Token::NOT)) {
-            if (match(Token::PI)){
-                e = parseAExp(); //not?
-                if (!match(Token::PD)){
-                    cout << "Falta paréntesis derecho" << endl;
-                    exit(0);
-                }
-                return e;
-            }
-            else if (match(Token::ID)) {
-                string id = previous->text;
-                if (match(Token::PI)) {
-                    list<Exp*> args;
-                    while (!match(Token::PD)) { //check
-                        args.push_back(parseCExp());
-                        match(Token::COMA);
-                    }
-                    return new FCallExp(args, id); //not???
-                }
-            }
     }
     cout << "Error: se esperaba un bonito input xd." << endl;
     exit(0);

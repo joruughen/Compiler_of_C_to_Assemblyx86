@@ -9,7 +9,6 @@
 class TypeVisitor;
 using namespace std;
 enum BinaryOp { PLUS_OP, MINUS_OP, MUL_OP, DIV_OP,LT_OP, LE_OP, EQ_OP, GT_OP,GE_OP, NE_OP, AND_OP, OR_OP };
-enum UpdateOp{PLUS_PLUS_OP,MINUS_MINUS_OP};
 class Block;
 class ImpValueVisitor;
 class Exp {
@@ -20,8 +19,6 @@ public:
     virtual ~Exp() = 0;
     static string binopToChar(BinaryOp op);
 };
-
-
 
 class BinaryExp : public Exp {
 public:
