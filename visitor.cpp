@@ -177,8 +177,7 @@ int PrintVisitor::visit(NumberExp* exp) {
 }
 
 int PrintVisitor::visit(BoolExp* exp) {
-    if(exp->value) cout << "true";
-    else cout << "false";
+    cout << (exp->value ? "true" : "false");
     return 0;
 }
 

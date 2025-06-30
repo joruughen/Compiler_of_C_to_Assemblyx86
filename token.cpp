@@ -35,6 +35,8 @@ std::ostream& operator << ( std::ostream& outs, const Token & tok )
         case Token::CHD: outs << "TOKEN(CHD)"; break;
         case Token::WHILE: outs << "TOKEN(WHILE)"; break;
         case Token::COMA: outs << "TOKEN(COMA)"; break;
+        case Token::TRUE: outs << "TOKEN(TRUE)"; break;
+        case Token::FALSE: outs << "TOKEN(FALSE)"; break;
         case Token::CHI: outs << "TOKEN(CHI)"; break;
         case Token::GE: outs << "TOKEN(GE)"; break;
         case Token::GT: outs << "TOKEN(GT)"; break;

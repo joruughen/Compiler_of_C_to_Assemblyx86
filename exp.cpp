@@ -2,7 +2,7 @@
 #include "exp.h"
 using namespace std;
 BinaryExp::BinaryExp(Exp* l, Exp* r, BinaryOp op):left(l),right(r),op(op) {}
-NumberExp::NumberExp(int v):value(v) {}
+NumberExp::NumberExp(long long v, string type_literal):value(v), literal_type(type_literal) {}
 BoolExp::BoolExp(bool v):value(v) {}
 IdentifierExp::IdentifierExp(const string& n):name(n) {}
 PrintStatement::PrintStatement(string s):s(s){}

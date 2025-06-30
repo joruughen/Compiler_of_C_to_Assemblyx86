@@ -22,6 +22,18 @@ Token* Scanner::nextToken() {
         current++;
         while (current < input.length() && isdigit(input[current]))
             current++;
+
+        int num_end = current;
+
+        while (current < input.length()) {
+            char ch = input[current];
+            if (ch == 'U' || ch == 'u' || ch == 'L' || ch == 'l') {
+                current++;
+            } else {
+                break;
+            }
+        }
+
         token = new Token(Token::NUM, input, first, current - first);
     }
     else if (isalpha(c)) {
@@ -47,6 +59,16 @@ Token* Scanner::nextToken() {
         else if (word == "char") {
             token = new Token(Token::PRIMITIVE_TYPE, word, 0, word.length());
         }
+        else if (word == "bool") {
+            token = new Token(Token::PRIMITIVE_TYPE, word, 0, word.length());
+        }
+        else if (word == "true") {
+            token = new Token(Token::TRUE, word, 0, word.length());
+        }
+        else if (word == "false") {
+            token = new Token(Token::FALSE, word, 0, word.length());
+        }
+
         else if (word == "void") {
             token = new Token(Token::PRIMITIVE_TYPE, word, 0, word.length());
         }
