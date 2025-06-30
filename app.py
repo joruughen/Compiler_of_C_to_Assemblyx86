@@ -389,7 +389,9 @@ if compiler_ready:
 
         c_code = st.text_area(
             "",
-            value="""int main() {
+            value="""#include <stdio.h>
+            
+int main() {
     int x;
     int y;
     int result;
