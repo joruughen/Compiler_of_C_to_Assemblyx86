@@ -6,6 +6,8 @@
 #include "exp.h"
 #include "imp_value_visitor.hh"
 #include "environment.hh"
+#include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -18,6 +20,8 @@ public:
   int label_counter;
   std::unordered_map<std::string, int> stack_offsets;
   ImpType current_exp_type;
+  int string_counter = 0;
+  vector<pair<string, string>> pending_strings;
   int etiquetas=0;
   void generate(Program*);
   void visit(Program*);
@@ -86,6 +90,27 @@ public:
         return 8;
     }
   }
+
+  string get_or_create_string_literal(const string& content) {
+    string label = "str_" + to_string(string_counter++);
+
+    string processed = content;
+    size_t pos = 0;
+    while ((pos = processed.find("\\n", pos)) != string::npos) {
+      processed.replace(pos, 2, "\\n");
+      pos += 2;
+    }
+    pos = 0;
+    while ((pos = processed.find("\\t", pos)) != string::npos) {
+      processed.replace(pos, 2, "\\t");
+      pos += 2;
+    }
+
+    pending_strings.push_back({label, processed});
+
+    return label;
+  }
+
 
 };
 

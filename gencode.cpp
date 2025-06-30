@@ -75,9 +75,9 @@ void Program::accept(ImpValueVisitor* v) {
 void ImpCODE::generate(Program* p) {
     // Data section for strings/constants
     emit(".data");
-    emit("print_fmt: .string \"%d\\n\"");
-    emit("print_fmt_unsigned: .string \"%lu\\n\"");  // Añadir formato para unsigned
-    emit("print_fmt_long: .string \"%ld\\n\"");      // Long usa el mismo formato
+    emit("print_fmt: .string \"%d\\n\""); //no necesario
+    emit("print_fmt_unsigned: .string \"%luProgram\\n\"");  // ya no es necesario, pero dejemoslo para exponerlo?
+    emit("print_fmt_long: .string \"%ld\\n\"");      // no necesario
 
     // Text section (code)
     emit(".text");
@@ -96,6 +96,16 @@ void ImpCODE::generate(Program* p) {
     emit("  movl $0, %eax");
     emit("  leave");
     emit("  ret");
+
+
+    if (!pending_strings.empty()) {
+        emit("");
+        emit(".data");
+        for (const auto& str_pair : pending_strings) {
+            emit(str_pair.first + ": .string \"" + str_pair.second + "\"");
+        }
+    }
+
     emit(".section .note.GNU-stack,\"\",@progbits");
 }
 
@@ -211,11 +221,10 @@ void ImpCODE::visit(ForStatement *e) {
 }
 
 void ImpCODE::visit(PrintStatement* s) {
-    // Primero, analizar el string de formato para encontrar especificadores
     string format = s->s;
     vector<string> format_specs;
 
-    // Extraer especificadores de formato
+    // Extraer especificadores de formato (TU LÓGICA ORIGINAL)
     for (size_t i = 0; i < format.length() - 1; i++) {
         if (format[i] == '%') {
             if (format[i + 1] == 'd' || format[i + 1] == 'i') {
@@ -240,94 +249,80 @@ void ImpCODE::visit(PrintStatement* s) {
         }
     }
 
-    // Verificar que el número de especificadores coincide con los parámetros
+    // CASO 1: String sin especificadores (solo texto)
+    if (format_specs.empty()) {
+        string string_label = get_or_create_string_literal(s->s);
+        emit("leaq " + string_label + "(%rip), %rdi");
+        emit("movl $0, %eax");
+        emit("call printf@PLT");
+        return;
+    }
+
+    // CASO 2: String con especificadores pero sin argumentos (error)
+    if (!format_specs.empty() && s->param_list.empty()) {
+        cerr << "Error: formato tiene especificadores pero no hay argumentos" << endl;
+        exit(1);
+    }
+
+    // CASO 3: String con especificadores y argumentos - USAR STRING COMPLETO
     if (format_specs.size() != s->param_list.size()) {
         cerr << "Error: número de argumentos no coincide con especificadores de formato" << endl;
         cerr << "Especificadores: " << format_specs.size() << ", Argumentos: " << s->param_list.size() << endl;
         exit(1);
     }
 
-    // Si no hay parámetros, solo imprimir el string
-    if (s->param_list.empty()) {
-        emit("leaq .LC" + to_string(label_counter) + "(%rip), %rdi");
-        emit("movl $0, %eax");
-        emit("call printf@PLT");
-        return;
+    // NUEVA LÓGICA: Una sola llamada con el string completo
+    string complete_string_label = get_or_create_string_literal(s->s);
+
+    // Preparar argumentos en orden correcto (System V ABI)
+    vector<string> arg_regs = {"%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+
+    // Argumentos extra al stack (si hay más de 5)
+    if (s->param_list.size() > 5) {
+        for (int i = s->param_list.size() - 1; i >= 5; i--) {
+            s->param_list[i]->accept(this);
+
+            // Ajustar según tipo (mantener tu lógica)
+            if (current_exp_type.ttype == ImpType::INT) {
+                emit("movslq %eax, %rax");
+            } else if (current_exp_type.ttype == ImpType::UINT || current_exp_type.ttype == ImpType::BOOL) {
+                emit("movl %eax, %eax");  // Zero extend
+            }
+            // Para LONG ya está correcto
+
+            emit("pushq %rax");
+        }
     }
 
-    // Para cada parámetro, evaluar y determinar el formato correcto
-    size_t param_idx = 0;
-    for (auto it : s->param_list) {
-        it->accept(this);  // Evaluar la expresión, resultado en %rax/%eax
+    // Cargar primeros 5 argumentos en registros
+    for (int i = min((int)s->param_list.size(), 5) - 1; i >= 0; i--) {
+        s->param_list[i]->accept(this);
 
-        // Determinar qué formato usar basado en el tipo de la expresión
-        string format_to_use;
-
-        // Si hay especificador explícito en el formato, verificar compatibilidad
-        if (param_idx < format_specs.size()) {
-            string requested_format = format_specs[param_idx];
-
-            // Verificar compatibilidad entre tipo y formato
-            if (current_exp_type.ttype == ImpType::UINT) {
-                if (requested_format != "%u" && requested_format != "%lu") {
-                    cerr << "Warning: usando formato " << requested_format
-                         << " para unsigned int" << endl;
-
-                }
-                if (requested_format == "%d") {
-                    format_to_use = "print_fmt";
-                }
-                else if (requested_format == "%ld") {
-                    format_to_use = "print_fmt_long";
-                }
-                else {
-                    format_to_use = "print_fmt_unsigned";
-                }
-            } else if (current_exp_type.ttype == ImpType::LONG) {
-                if (requested_format != "%ld" && requested_format != "%lu") {
-                    cerr << "Warning: usando formato " << requested_format
-                         << " para long int" << endl;
-                }
-                format_to_use = "print_fmt_long";
-            } else {
-                // INT o BOOL
-                format_to_use = "print_fmt";
-            }
-        } else {
-            // Sin especificador, usar formato por defecto según el tipo
-            switch (current_exp_type.ttype) {
-                case ImpType::UINT:
-                    format_to_use = "print_fmt_unsigned";
-                    break;
-                case ImpType::LONG:
-                    format_to_use = "print_fmt_long";
-                    break;
-                default:
-                    format_to_use = "print_fmt";
-                    break;
-            }
-        }
-
-        // CAMBIO IMPORTANTE: Mover el valor al registro correcto según el tipo
+        // Ajustar según tipo (mantener tu lógica de tipos)
         if (current_exp_type.ttype == ImpType::INT) {
-            // Para int con signo, extender signo de 32 a 64 bits
-            emit("movslq %eax, %rsi");
+            emit("movslq %eax, %rax");
         } else if (current_exp_type.ttype == ImpType::UINT || current_exp_type.ttype == ImpType::BOOL) {
-            // Para unsigned int, zero extend (automático al mover a registro de 32 bits)
-            emit("movl %eax, %esi");  // Zero extend de 32 a 64 bits
-        } else {
-            // Para long (64 bits)
-            emit("movq %rax, %rsi");
+            emit("movl %eax, %eax");  // Zero extend
         }
+        // Para LONG ya está correcto en %rax
 
-        emit("leaq " + format_to_use + "(%rip), %rdi");
-        emit("movl $0, %eax");
-        emit("call printf@PLT");
+        // Mover al registro correspondiente
+        if (i < (int)arg_regs.size()) {
+            emit("movq %rax, " + arg_regs[i]);
+        }
+    }
 
-        param_idx++;
+    // Cargar el string completo (con texto + especificadores)
+    emit("leaq " + complete_string_label + "(%rip), %rdi");
+    emit("movl $0, %eax");
+    emit("call printf@PLT");
+
+    // Limpiar stack si había argumentos extra
+    if (s->param_list.size() > 5) {
+        int extra_args = s->param_list.size() - 5;
+        emit("addq $" + to_string(8 * extra_args) + ", %rsp");
     }
 }
-
 
 
 void ImpCODE::visit(IfStatement* s) {
